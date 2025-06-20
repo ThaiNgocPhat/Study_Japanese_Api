@@ -3,6 +3,7 @@ services:
     build:
       context: ./discovery-service
       dockerfile: Dockerfile
+    container_name: eureka-server
     ports:
       - "8761:8761"
     environment:
@@ -12,5 +13,27 @@ services:
     networks:
       - my-network
 
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: config-server
+      SERVER_PORT: 8888
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/ThaiNgocPhat/Config_Repo
+      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: main
+    depends_on:
+      - eureka-server
+    networks:
+      - my-network
+
 networks:
   my-network:
+    driver: bridge

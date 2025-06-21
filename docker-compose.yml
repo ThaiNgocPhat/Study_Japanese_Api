@@ -10,8 +10,15 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
       EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      EUREKA_INSTANCE_HOSTNAME: eureka-server
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
     networks:
       - my-network
+    healthcheck:
+      test: curl --fail http://localhost:8761/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   config-server:
     build:
@@ -30,7 +37,32 @@ services:
       SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/ThaiNgocPhat/Config_Repo
       SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: main
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - my-network
+    healthcheck:
+      test: curl --fail http://localhost:8888/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     networks:
       - my-network
 

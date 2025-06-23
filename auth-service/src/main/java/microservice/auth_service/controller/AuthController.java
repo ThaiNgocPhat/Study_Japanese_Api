@@ -27,7 +27,7 @@ public class AuthController {
 
     @Operation(summary = "Register account", description = "Register a new user account and send OTP to the email")
     @PostMapping("/register")
-    public ResponseEntity<ResponseWrapper<MessageResponse>> register(@Valid @ModelAttribute RegisterDto req) throws MessagingException {
+    public ResponseEntity<ResponseWrapper<MessageResponse>> register(@Valid @RequestBody RegisterDto req) throws MessagingException {
         ResponseWrapper<MessageResponse> response = authService.register(req);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

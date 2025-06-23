@@ -88,6 +88,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -104,6 +105,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             "/swagger-ui", "/swagger-ui.html", "/v3/api-docs", "/api-docs", "/docs", "/webjars", "/auth"
     );
 
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -112,7 +115,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
         for (String prefix : EXCLUDED_PATH_PREFIXES) {
-            if (path.startsWith(prefix)) {
+            if (pathMatcher.match(prefix, path)) {
                 log.info("Bypassing JWT filter for: {}", path);
                 filterChain.doFilter(request, response);
                 return;

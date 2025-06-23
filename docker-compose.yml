@@ -1,4 +1,22 @@
 services:
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mapyeugau110418
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   eureka-server:
     build:
       context: ./discovery-service
@@ -66,6 +84,28 @@ services:
     networks:
       - my-network
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    networks:
+      - my-network
+
 networks:
   my-network:
     driver: bridge
+
+volumes:
+  mysql_data:

@@ -10,6 +10,8 @@ import microservice.auth_service.security.principle.MyUserDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -48,8 +50,7 @@ public class JwtProvider {
     }
 
     private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(String username, Set<Role> roles){
@@ -59,10 +60,11 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .setSubject(username)
+                .claim("username", username)
                 .claim("roles", roleNames)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plus(EXPIRED_ACCESS, ChronoUnit.MILLIS)))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 

@@ -31,9 +31,13 @@ public class RegisterDto {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Schema(description = "Password (minimum 6 characters)", example = "Abc123@", required = true)
+    @Schema(description = "Password must contain at least 1 lowercase, 1 uppercase, 1 digit, 1 special character and be at least 6 characters", example = "Abc123@", required = true)
     @NotBlank(message = "Password must not be blank")
     @Size(min = 6, message = "Password must be at least 6 characters")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{6,}$",
+            message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
+    )
     private String password;
 
     @Schema(description = "Confirm password", example = "Abc123@", required = true)

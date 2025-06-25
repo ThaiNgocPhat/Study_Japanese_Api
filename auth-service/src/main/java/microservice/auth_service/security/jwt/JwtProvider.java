@@ -53,13 +53,14 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String username, Set<Role> roles){
+    public String generateAccessToken(String username, Set<Role> roles, String name){
         List<String> roleNames = roles.stream()
                 .map(role -> role.getRoleName().name())
                 .collect(Collectors.toList());
 
         return Jwts.builder()
                 .setSubject(username)
+                .claim("name", name)
                 .claim("username", username)
                 .claim("roles", roleNames)
                 .setIssuedAt(new Date())

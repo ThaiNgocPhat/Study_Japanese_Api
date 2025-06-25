@@ -9,4 +9,5 @@ public interface IUserRepository extends JpaRepository<User, String> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     Optional<User> findByOtpAndIsVerifiedFalse(String otp);
+    Optional<User> findByResetOtp(String resetOtp);
 }

@@ -2,10 +2,7 @@ package microservice.auth_service.service.impl;
 
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import microservice.auth_service.dto.req.FormLogin;
-import microservice.auth_service.dto.req.OtpDto;
-import microservice.auth_service.dto.req.RegisterDto;
-import microservice.auth_service.dto.req.ResendOtpDto;
+import microservice.auth_service.dto.req.*;
 import microservice.auth_service.dto.res.JwtResponse;
 import microservice.auth_service.entity.Role;
 import microservice.auth_service.entity.User;
@@ -88,6 +85,46 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
+    public ResponseWrapper<MessageResponse> resetPassword(ResetPasswordDto req) {
+        if (!req.getNewPassword().equals(req.getConfirmNewPassword())) {
+            throw new HttpBadRequest("New password and confirm new password do not match");
+        }
+
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new HttpNotFound("Email not found"));
+
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        userRepository.save(user);
+        ResponseWrapper<MessageResponse> response = new ResponseWrapper<>();
+        response.setCode(200);
+        response.setStatus(HttpStatus.OK);
+        response.setData(new MessageResponse("Reset password successfully"));
+        return response;
+    }
+
+
+    @Override
+    public ResponseWrapper<MessageResponse> verifyForgotPassword(OtpForgotPasswordDto resetOtp) {
+        if (resetOtp.getResetOtp() == null || resetOtp.getResetOtp().isEmpty()){
+            throw new HttpBadRequest("OTP must not be empty");
+        }
+        User user = userRepository.findByResetOtp(resetOtp.getResetOtp())
+                .orElseThrow(() -> new HttpBadRequest("Invalid OTP"));
+        LocalDateTime now = LocalDateTime.now();
+        if (user.getResetOtpExpiresAt() == null || Duration.between(user.getResetOtpExpiresAt(), now).toMinutes() > 5) {
+            throw new HttpBadRequest("OTP has expired. Please request a new one.");
+        }
+        user.setResetOtp(null);
+        user.setResetOtpExpiresAt(null);
+        userRepository.save(user);
+        ResponseWrapper<MessageResponse> response = new ResponseWrapper<>();
+        response.setCode(200);
+        response.setStatus(HttpStatus.OK);
+        response.setData(new MessageResponse("OTP verified successfully"));
+        return response;
+    }
+
+    @Override
     public ResponseWrapper<MessageResponse> verify(OtpDto otpDto) {
         if (otpDto.getOtp() == null || otpDto.getOtp().trim().isEmpty()) {
             throw new HttpBadRequest("OTP must not be empty");
@@ -112,9 +149,34 @@ public class AuthServiceImpl implements IAuthService {
         response.setData(new MessageResponse("OTP verified successfully"));
         return response;
     }
+
+    @Override
+    public ResponseWrapper<MessageResponse> resendOtpForgotPassword(ResendOtpForgotPasswordDto req) throws MessagingException {
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new HttpNotFound("Email not found"));
+
+        String newOtp = jwtProvider.generateOTP();
+        user.setResetOtp(newOtp);
+        user.setResetOtpExpiresAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        mailService.sendOTPForgotPassword(
+                user.getEmail(),
+                user.getEmail(),
+                "Resend OTP Forgot Password",
+                newOtp
+        );
+
+        ResponseWrapper<MessageResponse> response = new ResponseWrapper<>();
+        response.setCode(200);
+        response.setStatus(HttpStatus.OK);
+        response.setData(new MessageResponse("OTP sent successfully"));
+        return response;
+    }
+
     public ResponseWrapper<MessageResponse> resendOtp(ResendOtpDto req) throws MessagingException {
-        User user = userRepository.findByUsername(req.getUsername())
-                .orElseThrow(() -> new HttpNotFound("User not found"));
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new HttpNotFound("Email not found"));
 
         if (user.getIsVerified()) {
             throw new HttpBadRequest("User is already verified");
@@ -161,8 +223,7 @@ public class AuthServiceImpl implements IAuthService {
             throw new HttpBadRequest("User has no roles");
         }
 
-        String token = jwtProvider.generateAccessToken(user.getUsername(), roles);
-
+        String token = jwtProvider.generateAccessToken(user.getUsername(), roles, user.getName());
         JwtResponse response = new JwtResponse();
         response.setToken(token);
 

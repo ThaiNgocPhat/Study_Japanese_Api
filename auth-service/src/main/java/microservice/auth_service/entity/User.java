@@ -69,4 +69,10 @@ public class User{
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+    @Column(name = "reset_otp")
+    private String resetOtp;
+
+    @Column(name = "reset_otp_expires_at")
+    private LocalDateTime resetOtpExpiresAt;
 }

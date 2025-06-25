@@ -5,10 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import microservice.auth_service.dto.req.FormLogin;
-import microservice.auth_service.dto.req.OtpDto;
-import microservice.auth_service.dto.req.RegisterDto;
-import microservice.auth_service.dto.req.ResendOtpDto;
+import microservice.auth_service.dto.req.*;
 import microservice.auth_service.dto.res.JwtResponse;
 import microservice.auth_service.service.IAuthService;
 import microservice.common_lib.response.MessageResponse;
@@ -50,6 +47,27 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResponseWrapper<JwtResponse>> login(@Valid @RequestBody FormLogin req) {
         ResponseWrapper<JwtResponse> response = authService.login(req);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Resend OTP for Password Reset",
+            description = "Send a new OTP code to the user's registered email address for password reset verification. This OTP is used only for the 'forgot password' process and is separate from the account verification OTP."
+    )
+    @PostMapping("/resend-otp/forgot-password")
+    public ResponseEntity<ResponseWrapper<MessageResponse>> resendOtpForgotPassword(@RequestBody ResendOtpForgotPasswordDto req) throws MessagingException {
+        ResponseWrapper<MessageResponse> response = authService.resendOtpForgotPassword(req);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping("/verify/forgot-password")
+    public ResponseEntity<ResponseWrapper<MessageResponse>> verifyOtpForgotPassword(@RequestBody OtpForgotPasswordDto req) {
+        ResponseWrapper<MessageResponse> response = authService.verifyForgotPassword(req);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseWrapper<MessageResponse>> resetPassword(@RequestBody ResetPasswordDto req){
+        ResponseWrapper<MessageResponse> response = authService.resetPassword(req);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

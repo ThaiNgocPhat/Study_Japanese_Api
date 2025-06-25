@@ -30,4 +30,18 @@ public class MailService {
         helper.setText(htmlContent, true);
         mailSender.send(message);
     }
+
+    public void sendOTPForgotPassword(String to, String username, String email, String otp) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setTo(to);
+        helper.setSubject("Mã OTP xác thực");
+        Context context = new Context();
+        context.setVariable("otp", otp);
+        context.setVariable("username", username);
+        context.setVariable("email", email);
+        String htmlContent = templateEngine.process("forgot_password", context);
+        helper.setText(htmlContent, true);
+        mailSender.send(message);
+    }
 }

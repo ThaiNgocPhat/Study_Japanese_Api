@@ -17,6 +17,7 @@
 		<module>api-gateway</module>
 		<module>common-lib</module>
 		<module>auth-service</module>
+		<module>vocabulary-lesson</module>
 	</modules>
 
 	<properties>

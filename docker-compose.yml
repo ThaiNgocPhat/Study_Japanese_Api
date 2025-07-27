@@ -4,10 +4,10 @@ services:
     image: mysql:8
     container_name: mysql
     ports:
-      - "3307:3306"
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: mapyeugau110418
-      MYSQL_DATABASE: auth_db
+      MYSQL_DATABASE: study_japanese_api
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -94,6 +94,28 @@ services:
     container_name: auth-service
     ports:
       - "9999:9999"
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    networks:
+      - my-network
+
+  vocabulary-lesson:
+    build:
+      context: .
+      dockerfile: vocabulary-lesson/Dockerfile
+    container_name: vocabulary-lesson
+    ports:
+      - "9998:9998"
     restart: always
     environment:
       SPRING_PROFILES_ACTIVE: dev
